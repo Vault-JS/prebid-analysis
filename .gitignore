@@ -1,0 +1,43 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Keys and secrets
+.env
+
+# VSCode / Cursor IDE
+.vscode/
+.history/
+.code-search/
+.ccls-cache/
+*.code-workspace
+
+# Settings and workspace state
+*.sublime-workspace
+*.sublime-project
+
+# Python-specific editor artifacts
+.python-version
+
+# Cursor-specific directories (if any)
+.cursor/
+
+/workspace_storage/
+/*.code-snippets
+
+# data
+data/
+
+# macOS
+.DS_Store
+
+# Prebid.js
+Prebid.js/
+prebid.github.io/
