@@ -33,11 +33,11 @@ wheels/
 /*.code-snippets
 
 # data
-data/
+# data/  # commented out to limit Antigravity blocking
 
 # macOS
 .DS_Store
 
 # Prebid.js
-Prebid.js/
-prebid.github.io/
+# Prebid.js/  # commented out to limit Antigravity blocking
+# prebid.github.io/  # commented out to limit Antigravity blocking
