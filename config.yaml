@@ -1,0 +1,68 @@
+ingestion:
+  canonical_db_path: data/vendor_library.db
+  martech_file_paths:
+    - data/martech_data_1.json
+    - data/martech_data_2.json
+    - data/martech_data_3.json
+  tracker_radar_repo_url: https://github.com/duckduckgo/tracker-radar/archive/refs/heads/main.zip
+  tracker_radar_temp_dir: data/tmp/tracker_radar
+  tracker_radar_extract_dirname: tracker-radar-main
+  tracker_radar_download_timeout_seconds: 120
+  tcf_iab_europe_url: https://iabeurope.eu/vendor-list-tcf/
+  tcf_iab_europe_ajax_url: https://iabeurope.eu/wp-admin/admin-ajax.php
+  tcf_onetrust_url: https://cdn.cookielaw.org/vendorlist/iabData.json
+  tcf_iab2v2_url: https://vendor-list.consensu.org/v3/vendor-list.json
+  tcf_google_url: https://storage.googleapis.com/tcfac/additional-consent-providers.csv
+  tcf_browser_timeout_seconds: 60
+  builtwith_base_url: https://trends.builtwith.com
+  builtwith_browser_timeout_seconds: 30
+  builtwith_page_load_wait_ms: 5000
+  prebid_repo_url: https://github.com/prebid/Prebid.js/archive/refs/heads/master.zip
+  prebid_temp_dir: data/tmp/prebid
+  prebid_extract_dirname: Prebid.js-master
+  prebid_download_timeout_seconds: 120
+  gtm_api_url: https://tagmanager.google.com/api/gallery/templates?hl=en
+  gtm_timeout_seconds: 30
+  gtm_raw_output_path: data/gtm_templates.json
+  disconnect_repo_url: https://github.com/disconnectme/disconnect-tracking-protection/archive/refs/heads/master.zip
+  disconnect_temp_dir: data/tmp/disconnect
+  disconnect_extract_dirname: disconnect-tracking-protection-master
+  disconnect_download_timeout_seconds: 120
+  # Other ideas for unused sources:
+  # https://www.criteo.com/privacy/our-partners/ - lists privacy policies for partners of Criteo
+
+filterlists:
+  easylist_path: data/filterlists/EasyList.txt
+  easyprivacy_path: data/filterlists/EasyPrivacy.txt
+
+analysis:
+  plot_output_dir: data/plots
+
+mysql_database:
+  host: "prod-pdf-pagerunner-data-flow-pdf-rds-proxy.proxy-cyf5p5a9cgb7.us-east-1.rds.amazonaws.com"
+  port: 3306
+  database: "prod_page_runner"
+  username: ""
+  use_secrets_manager: true
+  secret_arn: "arn:aws:secretsmanager:us-east-1:358694631277:secret:/pdf/rds/creds/pagerunner-rds-mysql/pdf-pagerunner-data-flow-eHFHCb"
+  aws_region: "us-east-1"
+
+llm:
+  vendor_agent:
+    provider: openai  # or "gemini"
+    model_name: gpt-5-mini # gemini-2.5-flash-preview-09-2025
+    reasoning_effort: high
+    enable_web_search: true
+    search_context_size: medium
+    service_tier: default  # flex/default/priority
+    max_iterations: 5
+    temperature: 0.7  # Temperature for Gemini models only (0.0-2.0). Not used for GPT thinking models.
+  prebid_extraction:
+    provider: openai  # or "gemini"
+    model_name: gpt-5-mini
+    reasoning_effort: medium
+    enable_web_search: false
+    search_context_size: medium
+    service_tier: flex  # flex/default/priority
+    temperature: 0.7  # Temperature for Gemini models only (0.0-2.0). Not used for GPT thinking models.
+

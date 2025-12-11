@@ -1,0 +1,156 @@
+
+extract_prebid_vendor:
+  description: >-
+    Extract vendor information from Prebid.js module files (.js/.ts and .md).
+  input_schema:
+    vendor_name: string - name of the vendor/module
+    module_type: string - BidAdapter, RtdProvider, AnalyticsAdapter, IdSystem, or VideoProvider
+    js_content: string | null - content of .js or .ts file
+    md_content: string | null - content of .md documentation file
+  instructions: |-
+    You are an expert at analyzing Prebid.js vendor modules. Extract comprehensive
+    information about the vendor from the provided JavaScript/TypeScript and Markdown files.
+
+    ## Module Types
+    - BidAdapter: Connects to vendor's bid server for auction participation
+    - RtdProvider: Real-Time Data provider that enriches bid requests
+    - AnalyticsAdapter: Tracks auction events and sends analytics data
+    - IdSystem: User ID provider for identity resolution
+    - VideoProvider: Video player integration
+
+    ## Extraction Guidelines
+
+    ### 1. Vendor/Product Identification
+    - Extract vendor name (may differ from module name)
+    - Extract product/module name
+    - Extract bidder code (for BidAdapters) - look for `BIDDER_CODE` or `code:` in spec
+    - Extract maintainer email from .md Overview section
+
+    ### 2. Domains and Endpoints
+    Look for constants near the top of .js files:
+    - `const ENDPOINT = 'https://...'` or `const BID_URL = 'https://...'`
+    - `const SYNC_URL = 'https://...'` (user sync endpoints)
+    - `const SCRIPT_URL = 'https://...'` (external scripts, common in RTD Providers)
+    - `const EVENT_ENDPOINT = 'https://...'` (analytics endpoints)
+    - Check `buildRequests()` function for URL construction
+    - Check `getUserSyncs()` function for sync URLs
+    - Check `loadExternalScript()` calls for external script URLs
+    - Extract base domains from URLs (e.g., `https://mp.4dex.io/prebid` → `mp.4dex.io`)
+
+    ### 3. Request Parameters
+    - URL query parameters: from `buildRequests()` URL construction
+    - POST body parameters: from `buildRequests()` data object
+    - Required parameters: from `isBidRequestValid()` validation checks
+    - Optional parameters: from `params` usage throughout code
+    - Configurable parameters: check for `params.url`, `params.endpoint` overrides
+    - Global config: look for `config.getConfig('vendorName')` usage
+    - AdUnit-level params: from `bid.params.*` usage
+
+    ### 4. Privacy/Consent Support
+    Check for handling of:
+    - GDPR: Look for `bidderRequest.gdprConsent`, `_getGdprConsent()`, `regs.gdpr`, `regs.ext.gdpr`, `user.ext.consent`
+    - GPP: Look for `bidderRequest.ortb2.regs.gpp`, `bidderRequest.ortb2.regs.gpp_sid`, `bidderRequest.gppConsent`, `regs.gpp`, `regs.gpp_sid`
+    - CCPA/USP: Look for `bidderRequest.uspConsent`, `regs.ext.us_privacy`, `regs.us_privacy`, `regs.ccpa`
+    - COPPA: Look for `config.getConfig('coppa')`, `regs.coppa`
+    - Schain: Look for `bidderRequest.ortb2.source.ext.schain` or `bidRequest.ortb2.source.ext.schain`
+    - EIDs: Look for `bidderRequest.ortb2.user.eids` or `bidRequest.userIdAsEids`, `user.eids`
+
+    ### 5. Configuration Options
+    - Global config: what can be set in `pbjs.setConfig({vendorName: {...}})`
+    - AdUnit params: what can be set per ad unit in `bids[].params`
+    - RTD params: what can be set in `realTimeData.dataProviders[].params`
+    - Default values: hardcoded constants
+    - Overridable endpoints: if `params.url` or `params.endpoint` exists
+
+    ### 6. Additional Metadata
+    - GVLID: Look for `const GVLID = <number>` or `gvlid: <number>` in spec object
+    - Supported media types: Banner, Video, Native (from spec or .md)
+    - Currency: if specified (e.g., `const CURRENCY = 'USD'`)
+    - TTL: time-to-live for bids if specified
+
+    ### 7. External Resources
+    - Scripts loaded via `loadExternalScript()`: extract URLs and any attributes
+    - User sync URLs: from `getUserSyncs()` return values
+    - Renderer scripts: for video outstream (e.g., BlueBillywig renderers)
+
+    ## Output Format
+    Return a JSON object with the following structure:
+    {
+      "vendor_name": "string - canonical vendor name",
+      "product_name": "string - product/module name",
+      "bidder_code": "string | null - bidder code (for BidAdapters)",
+      "maintainer": "string | null - maintainer email from .md",
+      "domains": [
+        {
+          "domain": "string - base domain (e.g., 'mp.4dex.io')",
+          "resource_type": "string - 'endpoint' | 'sync' | 'script' | 'analytics'",
+          "url": "string - full URL",
+          "method": "string | null - 'GET' | 'POST' | null",
+          "description": "string - what this resource is used for"
+        }
+      ],
+      "parameters": {
+        "required": [
+          {
+            "name": "string",
+            "scope": "string - 'global' | 'adunit' | 'rtd'",
+            "type": "string",
+            "description": "string"
+          }
+        ],
+        "optional": [
+          {
+            "name": "string",
+            "scope": "string",
+            "type": "string",
+            "default": "string | null",
+            "description": "string"
+          }
+        ],
+        "configurable": [
+          {
+            "name": "string - e.g., 'url', 'endpoint'",
+            "description": "string - what can be configured"
+          }
+        ]
+      },
+      "privacy_support": {
+        "gdpr": "boolean",
+        "gpp": "boolean",
+        "ccpa_usp": "boolean",
+        "coppa": "boolean",
+        "schain": "boolean",
+        "eids": "boolean",
+        "notes": "string | null - additional privacy notes"
+      },
+      "gvlid": "number | null - Global Vendor List ID",
+      "supported_media_types": ["string - 'banner' | 'video' | 'native'"],
+      "currency": "string | null",
+      "external_scripts": [
+        {
+          "url": "string",
+          "attributes": "object | null - script attributes if any",
+          "purpose": "string - why this script is loaded"
+        }
+      ],
+      "user_sync": {
+        "supported": "boolean",
+        "types": ["string - 'image' | 'iframe'"],
+        "urls": ["string | null - if hardcoded"]
+      },
+      "configuration": {
+        "global_config": "object | null - example global config structure",
+        "adunit_config": "object | null - example adunit config structure",
+        "rtd_config": "object | null - example RTD config structure (for RTD Providers)"
+      },
+      "extraction_notes": "string | null - any important notes or edge cases found"
+    }
+
+    ## Important Notes
+    - If a file is missing (.js or .md), extract what you can from available files
+    - Be precise with domain extraction - extract only the base domain, not full URLs
+    - For privacy support, only mark as true if there's explicit handling in the code
+    - If parameters are configurable via `params.url`, note this in configurable parameters
+    - Cross-reference .md documentation with .js implementation for accuracy
+    - If GVLID is present, it's a strong indicator of IAB TCF/GPP compliance
+  output_format: json
