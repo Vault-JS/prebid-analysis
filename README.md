@@ -1,14 +1,16 @@
 # Prebid analysis
 
-This repository contains scripts for analyzing Prebid.js codebase and extracting information about device storage disclosures.
+This repository contains scripts for analyzing Prebid.js codebase and inspecting GPP support of Prebid vendors.
+It is meant as an exploration repo for https://github.com/Vault-JS/vendor-library-llm
 
 ## Setup
 
 - Clone Prebid repositories:
-    `git clone git@github.com:prebid/Prebid.js.git`
-    `git clone git@github.com:prebid/prebid.github.io.git`
+  - `git clone git@github.com:prebid/Prebid.js.git`
+  - `git clone git@github.com:prebid/prebid.github.io.git`
 - Install dependencies using `uv`
-    `uv sync`
+  - `uv sync`
+- Create `.env` with `OPENAI_API_KEY`
 
 ## Results
 
@@ -171,6 +173,12 @@ user_ids            : Accuracy: 98.74% (704/713)
     - flipp: Doc=none != CSV=set()
 ```
 
+#### Comments
+
+- CSV seems to reflect documentation state close, but small changes were found - it is more reliable to extract the data from docs manually (more reliable)
+- Documentation and code (LLM Extraction) show large mismatch. Based on a very limited manual inspection, it seems that LLM is reliable in property extraction, and the documentation is not reflecting the code well. Anyway, we should ingest both for vendor library, but use LLM extraction as the primary source.
+
+
 ### GPP support
 
 ```
@@ -183,34 +191,38 @@ Deduplicated 583 -> 577 vendors (removed 6 duplicates).
   Vendors with URLs: 546
                        | All Regions     | One Region
   ---------------------+-----------------+----------------
-  All Endpoints        | 126 (21.8%)          | 128 (22.2%)
-  One Endpoint         | 282 (48.9%)          | 286 (49.6%)
+  All Endpoints        | 126 (21.8%)     | 128 (22.2%)
+  One Endpoint         | 282 (48.9%)     | 286 (49.6%)
 
 2. Docs != False (n=567):
   Vendors with URLs: 537
                        | All Regions     | One Region
   ---------------------+-----------------+----------------
-  All Endpoints        | 123 (21.7%)          | 125 (22.0%)
-  One Endpoint         | 277 (48.9%)          | 281 (49.6%)
+  All Endpoints        | 123 (21.7%)     | 125 (22.0%)
+  One Endpoint         | 277 (48.9%)     | 281 (49.6%)
 
 3. Docs == True (n=55):
   Vendors with URLs: 54
                        | All Regions     | One Region
   ---------------------+-----------------+----------------
-  All Endpoints        | 9 (16.4%)            | 9 (16.4%)
-  One Endpoint         | 34 (61.8%)           | 34 (61.8%)
+  All Endpoints        | 9 (16.4%)       | 9 (16.4%)
+  One Endpoint         | 34 (61.8%)      | 34 (61.8%)
 
 4. Extraction == True (n=89):
   Vendors with URLs: 86
                        | All Regions     | One Region
   ---------------------+-----------------+----------------
-  All Endpoints        | 18 (20.2%)           | 19 (21.3%)
-  One Endpoint         | 62 (69.7%)           | 62 (69.7%)
+  All Endpoints        | 18 (20.2%)      | 19 (21.3%)
+  One Endpoint         | 62 (69.7%)      | 62 (69.7%)
 
 5. Docs == True AND Extraction == True (n=32):
   Vendors with URLs: 32
                        | All Regions     | One Region
   ---------------------+-----------------+----------------
-  All Endpoints        | 8 (25.0%)            | 8 (25.0%)
-  One Endpoint         | 23 (71.9%)           | 23 (71.9%)
+  All Endpoints        | 8 (25.0%)       | 8 (25.0%)
+  One Endpoint         | 23 (71.9%)      | 23 (71.9%)
 ```
+
+#### Comments
+
+- Surprisingly, both documented and LLM-extracted data from code are not a reliable predictor whether GPP string request are supported or not.
