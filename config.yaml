@@ -18,8 +18,10 @@ ingestion:
   builtwith_browser_timeout_seconds: 30
   builtwith_page_load_wait_ms: 5000
   prebid_repo_url: https://github.com/prebid/Prebid.js/archive/refs/heads/master.zip
+  prebid_docs_repo_url: https://github.com/prebid/prebid.github.io/archive/refs/heads/master.zip
   prebid_temp_dir: data/tmp/prebid
   prebid_extract_dirname: Prebid.js-master
+  prebid_docs_extract_dirname: prebid.github.io-master
   prebid_download_timeout_seconds: 120
   gtm_api_url: https://tagmanager.google.com/api/gallery/templates?hl=en
   gtm_timeout_seconds: 30

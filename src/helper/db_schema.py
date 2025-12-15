@@ -9,11 +9,12 @@ DomainOrLink, CompanyRelationship, Evidence, EntityCluster, ClusterMember).
 
 Author: Karel Kubicek <karel.kubicek@vaultjs.com>
 """
-from datetime import datetime
+from datetime import datetime, date
 from typing import Any
 
 from sqlalchemy import (
     Boolean,
+    Date,
     DateTime,
     Enum,
     Float,
@@ -47,68 +48,6 @@ PROCESSING_STAGE = Enum(
     "reviewed",
     "final",
     name="processing_stage",
-    native_enum=False,
-    validate_strings=True,
-)
-
-BRAND_ENTITY_TYPE = Enum(
-    "brand",
-    "product",
-    "platform",
-    "service",
-    name="brand_entity_type",
-    native_enum=False,
-    validate_strings=True,
-)
-
-DOMAIN_LINK_TARGET_TYPE = Enum(
-    "company",
-    "brand",
-    name="domain_link_target_type",
-    native_enum=False,
-    validate_strings=True,
-)
-
-DOMAIN_RELATION_TYPE = Enum(
-    "owns",
-    "used_by",
-    "associated_with",
-    name="domain_relation_type",
-    native_enum=False,
-    validate_strings=True,
-)
-
-LINK_TYPE = Enum(
-    "index",
-    "documentation",
-    "policy",
-    "terms",
-    "disclosure",
-    "legitimate_interest",
-    "github_or_implementation",
-    "other",
-    name="link_type",
-    native_enum=False,
-    validate_strings=True,
-)
-
-COMPANY_RELATION_TYPE = Enum(
-    "parent_of",
-    "acquired",
-    "subsidiary_of",
-    "brand_of",
-    name="company_relation_type",
-    native_enum=False,
-    validate_strings=True,
-)
-
-EVIDENCE_ENTITY_TYPE = Enum(
-    "company",
-    "brand",
-    "domain",
-    "link",
-    "relationship",
-    name="evidence_entity_type",
     native_enum=False,
     validate_strings=True,
 )
@@ -200,6 +139,12 @@ class PrebidVendorExtraction(Base):
     )
     eids_supported: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
+    # Advanced Features
+    floors_supported: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    app_supported: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    s2s_supported: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    user_ids: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+
     # Metadata
     gvlid: Mapped[int | None] = mapped_column(Integer, nullable=True)
     supported_media_types: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
@@ -223,6 +168,97 @@ class PrebidVendorExtraction(Base):
         DateTime, default=datetime.now, onupdate=datetime.now, nullable=False
     )
 
+
+class PrebidDoc(Base):
+    __tablename__ = "prebid_docs"
+    __table_args__ = (
+        Index("ix_prebid_doc_vendor", "prebid_vendor_id"),
+        Index("ix_prebid_doc_slug", "slug", unique=True),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    prebid_vendor_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("prebid_vendors.id"), nullable=True
+    )
+    slug: Mapped[str] = mapped_column(Text, nullable=False)  # filename stem
+    file_path: Mapped[str] = mapped_column(Text, nullable=False)
+    raw_content: Mapped[str | None] = mapped_column(Text, nullable=True)
+    file_hash: Mapped[str | None] = mapped_column(Text, nullable=True)
+    extracted_metadata: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+
+    # Metadata for tracking updates
+    retrieved_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now, nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now, onupdate=datetime.now, nullable=False
+    )
+
+
+class DeviceStorageDisclosure(Base):
+    __tablename__ = "device_storage_disclosures"
+    __table_args__ = (
+        Index("ix_device_storage_tcf_vendor", "tcf_2v2_vendor_id"),
+        Index("ix_device_storage_collection_date", "collection_date"),
+        Index("ix_device_storage_disclosure_url", "disclosure_url"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    tcf_2v2_vendor_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("tcf_vendors.tcf_2v2_vendor_id"), nullable=True, unique=True
+    )
+    disclosure_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    prebid_vendor_name: Mapped[str | None] = mapped_column(Text, nullable=True)
+    raw_response: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    disclosures: Mapped[list[dict[str, Any]] | None] = mapped_column(
+        JSON, nullable=True
+    )
+    domains: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON, nullable=True)
+    collection_date: Mapped[date] = mapped_column(Date, nullable=False)
+    fetched_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now, onupdate=datetime.now, nullable=False
+    )
+
+
+class TcfVendor(Base):
+    __tablename__ = "tcf_vendors"
+    __table_args__ = (
+        Index("ix_tcf_vendor_name", "vendor_name"),
+        Index("ix_tcf_iab_vendor_id", "iab_europe_vendor_id"),
+        Index("ix_tcf_v1_vendor_id", "tcf_v1_vendor_id"),
+        Index("ix_tcf_2v2_vendor_id", "tcf_2v2_vendor_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    vendor_name: Mapped[str] = mapped_column(Text, nullable=False)
+    iab_europe_vendor_id: Mapped[int | None] = mapped_column(
+        Integer, nullable=True, unique=True
+    )
+    tcf_v1_vendor_id: Mapped[int | None] = mapped_column(
+        Integer, nullable=True, unique=True
+    )
+    tcf_2v2_vendor_id: Mapped[int | None] = mapped_column(
+        Integer, nullable=True, unique=True
+    )
+    iab_europe_data: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    tcf_v1_data: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    tcf_2v2_data: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    collection_date: Mapped[date] = mapped_column(Date, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now, onupdate=datetime.now, nullable=False
+    )
+    used: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
 
 # Helper tables for processing

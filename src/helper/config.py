@@ -8,11 +8,30 @@ and tool thresholds.
 Author: Karel Kubicek <karel.kubicek@vaultjs.com>
 """
 from __future__ import annotations
+from functools import lru_cache
 from pathlib import Path
 from typing import Literal, Any
+import os
 
 from pydantic import BaseModel, Field, field_validator
 import yaml
+
+
+def default_config_path() -> Path:
+    env_path = os.getenv("MARTECH_CONFIG_PATH")
+    if env_path:
+        return Path(env_path).resolve()
+    return Path(__file__).resolve().parents[2] / "config.yaml"
+
+
+@lru_cache(maxsize=None)
+def load_config_cached(config_path: str) -> AppConfig:
+    return load_app_config(Path(config_path))
+
+
+def get_config(config_path: Path | None = None) -> AppConfig:
+    path = str((config_path or default_config_path()).resolve())
+    return load_config_cached(path)
 
 
 class IngestionConfig(BaseModel):
@@ -32,8 +51,10 @@ class IngestionConfig(BaseModel):
     builtwith_browser_timeout_seconds: int = Field(gt=0, default=30)
     builtwith_page_load_wait_ms: int = Field(gt=0, default=5000)
     prebid_repo_url: str
+    prebid_docs_repo_url: str
     prebid_temp_dir: Path
     prebid_extract_dirname: str
+    prebid_docs_extract_dirname: str
     prebid_download_timeout_seconds: int = Field(gt=0, default=120)
     gtm_api_url: str
     gtm_timeout_seconds: int = Field(gt=0, default=30)

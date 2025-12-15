@@ -34,6 +34,7 @@ from src.helper.db_schema import (
 )
 from src.helper.db_session import get_engine, get_session_factory
 from src.loaders.prebid_hash_utils import compute_file_hash
+from src.loaders.prebid_docs_loader import ingest_prebid_docs
 
 
 # Module type patterns - these match the file naming conventions
@@ -427,7 +428,12 @@ def ingest_prebid() -> None:
     print("\n[*] Processing Prebid disclosure URLs...")
     with session_factory() as session:
         process_prebid_disclosures(session, modules_path, collection_date)
+        process_prebid_disclosures(session, modules_path, collection_date)
         session.commit()
+
+    # Ingest Documentation
+    print("\n[*] Starting Prebid Docs Ingestion...")
+    ingest_prebid_docs()
 
 
 def main() -> None:

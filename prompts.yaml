@@ -49,26 +49,32 @@ extract_prebid_vendor:
     ### 4. Privacy/Consent Support
     Check for handling of:
     - GDPR: Look for `bidderRequest.gdprConsent`, `_getGdprConsent()`, `regs.gdpr`, `regs.ext.gdpr`, `user.ext.consent`
-    - GPP: Look for `bidderRequest.ortb2.regs.gpp`, `bidderRequest.ortb2.regs.gpp_sid`, `bidderRequest.gppConsent`, `regs.gpp`, `regs.gpp_sid`
+    - GPP: Look for `bidderRequest.gppConsent`, `bidderRequest.ortb2.regs.gpp`, `regs.gpp`
     - CCPA/USP: Look for `bidderRequest.uspConsent`, `regs.ext.us_privacy`, `regs.us_privacy`, `regs.ccpa`
     - COPPA: Look for `config.getConfig('coppa')`, `regs.coppa`
     - Schain: Look for `bidderRequest.ortb2.source.ext.schain` or `bidRequest.ortb2.source.ext.schain`
     - EIDs: Look for `bidderRequest.ortb2.user.eids` or `bidRequest.userIdAsEids`, `user.eids`
 
-    ### 5. Configuration Options
+    ### 5. Advanced Features & Modules
+    - Price Floors: Look for `.getFloor()` usage on bid objects or `floors` module imports.
+    - App/Mobile: Look for `app` object handling in ORTB requests or mobile-specific endpoints.
+    - Server-Side (PBS): Look for `s2sConfig` or aliases to known server-side adapters (e.g. `appnexus`, `rubicon`).
+    - User Identity Modules: List specific ID modules if explicitly mentioned/supported (e.g. "Criteo ID", "ID5", "Unified ID").
+
+    ### 6. Configuration Options
     - Global config: what can be set in `pbjs.setConfig({vendorName: {...}})`
     - AdUnit params: what can be set per ad unit in `bids[].params`
     - RTD params: what can be set in `realTimeData.dataProviders[].params`
     - Default values: hardcoded constants
     - Overridable endpoints: if `params.url` or `params.endpoint` exists
 
-    ### 6. Additional Metadata
+    ### 7. Additional Metadata
     - GVLID: Look for `const GVLID = <number>` or `gvlid: <number>` in spec object
-    - Supported media types: Banner, Video, Native (from spec or .md)
+    - Supported media types: Banner, Video, Native (explicitly check for 'native' and 'video' in `supportedMediaTypes` or via code logic like `mediaTypes.video`)
     - Currency: if specified (e.g., `const CURRENCY = 'USD'`)
     - TTL: time-to-live for bids if specified
 
-    ### 7. External Resources
+    ### 8. External Resources
     - Scripts loaded via `loadExternalScript()`: extract URLs and any attributes
     - User sync URLs: from `getUserSyncs()` return values
     - Renderer scripts: for video outstream (e.g., BlueBillywig renderers)
@@ -123,6 +129,12 @@ extract_prebid_vendor:
         "eids": "boolean",
         "notes": "string | null - additional privacy notes"
       },
+      "features": {
+        "floors_supported": "boolean",
+        "app_supported": "boolean",
+        "s2s_supported": "boolean",
+        "user_ids": ["string - list of specific supported ID modules if any"]
+      },
       "gvlid": "number | null - Global Vendor List ID",
       "supported_media_types": ["string - 'banner' | 'video' | 'native'"],
       "currency": "string | null",
@@ -149,7 +161,7 @@ extract_prebid_vendor:
     ## Important Notes
     - If a file is missing (.js or .md), extract what you can from available files
     - Be precise with domain extraction - extract only the base domain, not full URLs
-    - For privacy support, only mark as true if there's explicit handling in the code
+    - For privacy support and features (floors, app, etc), only mark as true if there's explicit handling in the code
     - If parameters are configurable via `params.url`, note this in configurable parameters
     - Cross-reference .md documentation with .js implementation for accuracy
     - If GVLID is present, it's a strong indicator of IAB TCF/GPP compliance
